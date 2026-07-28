@@ -745,67 +745,46 @@ render_html(
     }
 
 
-    /* Default instruction text hidden */
+    /* Streamlit Cloud-safe drop-zone layout */
     section[data-testid="stFileUploaderDropzone"]
     [data-testid="stFileUploaderDropzoneInstructions"] {
         display: none !important;
     }
 
 
-    /* Drop-zone inner container */
     section[data-testid="stFileUploaderDropzone"] > div {
-        position: static !important;
+        position: relative !important;
 
         width: 100% !important;
 
         min-height: 205px !important;
 
-        padding: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+
+        padding: 1rem !important;
     }
 
 
-    /* Upload button exact horizontal and vertical center */
     section[data-testid="stFileUploaderDropzone"] button {
-        position: absolute !important;
+        position: static !important;
 
-        left: 50% !important;
-        top: 50% !important;
+        transform: none !important;
 
-        transform:
-            translate(
-                -50%,
-                -50%
-            ) !important;
+        margin: 0 auto !important;
 
-        margin: 0 !important;
+        white-space: nowrap !important;
 
-        white-space:
-            nowrap !important;
+        color: var(--dark-green) !important;
 
-        color:
-            var(--dark-green)
-            !important;
+        background: #fffdf7 !important;
 
-        background:
-            #fffdf7
-            !important;
+        border: 1px solid var(--dark-green) !important;
 
-        border:
-            1px solid
-            var(--dark-green)
-            !important;
+        border-radius: 8px !important;
 
-        border-radius:
-            8px
-            !important;
-
-        font-weight:
-            700
-            !important;
-
-        z-index:
-            5
-            !important;
+        font-weight: 700 !important;
     }
 
 
@@ -1679,9 +1658,15 @@ with left_column:
             "png",
             "jpg",
             "jpeg",
+            "jfif",
+            "webp",
+            "bmp",
+            "tif",
+            "tiff",
         ],
+        accept_multiple_files=False,
+        key="handwritten_image_uploader",
         label_visibility="collapsed",
-        on_change=clear_prediction,
     )
 
 
@@ -1692,36 +1677,59 @@ with left_column:
 
         try:
 
-            preview_image = Image.open(
-                io.BytesIO(
-                    uploaded_image.getvalue()
-                )
-            ).convert("RGB")
+            upload_signature = (
+                uploaded_image.name,
+                uploaded_image.size,
+            )
 
+            if (
+                st.session_state.get(
+                    "last_upload_signature"
+                )
+                != upload_signature
+            ):
+                st.session_state.prediction = None
+                st.session_state.last_upload_signature = (
+                    upload_signature
+                )
+
+            uploaded_image.seek(0)
+
+            with Image.open(
+                uploaded_image
+            ) as loaded_image:
+                preview_image = (
+                    loaded_image
+                    .convert("RGB")
+                    .copy()
+                )
+
+            st.success(
+                f"Image uploaded: {uploaded_image.name}"
+            )
 
             st.image(
                 preview_image,
-                caption=(
-                    "Uploaded handwritten image"
-                ),
+                caption="Uploaded handwritten image",
                 use_container_width=True,
             )
 
+        except Exception as error:
 
-        except (OSError, ValueError):
+            preview_image = None
+            st.session_state.prediction = None
 
             st.error(
-                "The uploaded file could not "
-                "be opened as an image."
+                "The uploaded file could not be opened "
+                f"as an image. {type(error).__name__}: {error}"
             )
-
-
 
 
     recognize_button = st.button(
         "🔍 Recognize Name",
         disabled=preview_image is None,
         use_container_width=True,
+        key="recognize_name_button",
     )
 
 
@@ -1730,15 +1738,28 @@ with left_column:
         and preview_image is not None
     ):
 
-        with st.spinner(
-            "Recognizing handwritten name..."
-        ):
+        try:
 
-            st.session_state.prediction = (
-                recognize_handwritten_image(
-                    preview_image
+            with st.spinner(
+                "Loading models and recognizing the image..."
+            ):
+
+                st.session_state.prediction = (
+                    recognize_handwritten_image(
+                        preview_image
+                    )
                 )
+
+        except Exception as error:
+
+            st.session_state.prediction = None
+
+            st.error(
+                "Recognition failed. Open Manage app → Logs "
+                "for the complete error."
             )
+
+            st.exception(error)
 
 
     render_html(
