@@ -12,42 +12,16 @@ from PIL import Image
 
 
 # =========================================================
-# LOAD INFERENCE MODULE FROM EXACT FILE PATH
+# PROJECT BASE PATH
 # =========================================================
 
 APP_DIR = Path(__file__).resolve().parent
 INFERENCE_FILE = APP_DIR / "inference.py"
 
-if not INFERENCE_FILE.is_file():
-    raise FileNotFoundError(
-        f"inference.py was not found at: {INFERENCE_FILE}"
-    )
-
-module_spec = importlib.util.spec_from_file_location(
-    "bangla_upazila_model_inference",
-    INFERENCE_FILE,
-)
-
-if module_spec is None or module_spec.loader is None:
-    raise ImportError(
-        f"Could not load inference module from: {INFERENCE_FILE}"
-    )
-
-inference_module = importlib.util.module_from_spec(module_spec)
-sys.modules["bangla_upazila_model_inference"] = inference_module
-module_spec.loader.exec_module(inference_module)
-
-if not hasattr(inference_module, "predict_upazila_district"):
-    raise ImportError(
-        "predict_upazila_district() was not found "
-        f"inside {INFERENCE_FILE}"
-    )
-
-predict_upazila_district = inference_module.predict_upazila_district
 
 # =========================================================
 # PAGE CONFIGURATION
-# =========================================================
+
 
 st.set_page_config(
     page_title="Bangla Handwritten Upazila–District Recognition",
@@ -107,12 +81,65 @@ def image_to_data_uri(image_path: Path) -> str:
     return f"data:{mime_type};base64,{encoded}"
 
 
+@st.cache_resource(show_spinner=False)
+def load_prediction_function():
+    """
+    Load inference.py only when prediction is requested.
+
+    This keeps the file uploader lightweight and prevents the
+    heavy ML dependencies from reloading whenever a file is selected.
+    """
+
+    if not INFERENCE_FILE.is_file():
+        raise FileNotFoundError(
+            f"inference.py was not found at: {INFERENCE_FILE}"
+        )
+
+    module_name = "bangla_upazila_model_inference"
+
+    module_spec = importlib.util.spec_from_file_location(
+        module_name,
+        INFERENCE_FILE,
+    )
+
+    if module_spec is None or module_spec.loader is None:
+        raise ImportError(
+            f"Could not load inference module from: {INFERENCE_FILE}"
+        )
+
+    inference_module = importlib.util.module_from_spec(
+        module_spec
+    )
+
+    sys.modules[module_name] = inference_module
+
+    module_spec.loader.exec_module(
+        inference_module
+    )
+
+    prediction_function = getattr(
+        inference_module,
+        "predict_upazila_district",
+        None,
+    )
+
+    if prediction_function is None:
+        raise ImportError(
+            "predict_upazila_district() was not found "
+            f"inside {INFERENCE_FILE}"
+        )
+
+    return prediction_function
+
+
 def recognize_handwritten_image(
     image: Image.Image,
 ) -> dict:
     """Run the real ensemble model prediction."""
 
-    return predict_upazila_district(
+    prediction_function = load_prediction_function()
+
+    return prediction_function(
         image
     )
 
@@ -1551,17 +1578,26 @@ with left_column:
 
 
     # =========================================================
-    # IMAGE UPLOADER
+    # SIMPLE STREAMLIT-CLOUD-SAFE IMAGE UPLOADER
     # =========================================================
 
     uploaded_image = st.file_uploader(
-        "Choose a handwritten image",
-        type=None,
+        "Upload handwritten image",
+        type=[
+            "png",
+            "jpg",
+            "jpeg",
+            "jfif",
+            "webp",
+            "bmp",
+            "tif",
+            "tiff",
+        ],
         accept_multiple_files=False,
-        key="handwritten_image_upload",
+        key="handwritten_image_upload_v2",
         help=(
-            "Upload PNG, JPG, JPEG, JFIF, WEBP, "
-            "BMP or TIFF image."
+            "Supported formats: PNG, JPG, JPEG, JFIF, "
+            "WEBP, BMP, TIF and TIFF."
         ),
     )
 
@@ -1575,45 +1611,54 @@ with left_column:
 
             uploaded_bytes = uploaded_image.getvalue()
 
-            if not uploaded_bytes:
+            if len(uploaded_bytes) == 0:
                 raise ValueError(
                     "The selected file is empty."
                 )
 
-            st.info(
-                f"Selected file: {uploaded_image.name} | "
-                f"Size: {len(uploaded_bytes) / 1024:.1f} KB"
-            )
-
             preview_image = Image.open(
                 io.BytesIO(uploaded_bytes)
-            ).convert("RGB")
+            )
+
+            preview_image = preview_image.convert(
+                "RGB"
+            )
 
             preview_image.load()
 
-            upload_signature = (
+            current_upload_signature = (
                 uploaded_image.name,
                 len(uploaded_bytes),
             )
 
-            if (
+            previous_upload_signature = (
                 st.session_state.get(
                     "last_upload_signature"
                 )
-                != upload_signature
+            )
+
+            if (
+                current_upload_signature
+                != previous_upload_signature
             ):
                 st.session_state.prediction = None
-                st.session_state.last_upload_signature = (
-                    upload_signature
-                )
+
+                st.session_state[
+                    "last_upload_signature"
+                ] = current_upload_signature
 
             st.success(
-                "Image uploaded successfully."
+                f"File received: {uploaded_image.name}"
+            )
+
+            st.caption(
+                f"File size: "
+                f"{len(uploaded_bytes) / 1024:.1f} KB"
             )
 
             st.image(
                 preview_image,
-                caption=uploaded_image.name,
+                caption="Uploaded handwritten image",
                 use_container_width=True,
             )
 
@@ -1623,8 +1668,8 @@ with left_column:
             st.session_state.prediction = None
 
             st.error(
-                "The selected file could not be "
-                "opened as an image."
+                "The selected file could not be opened "
+                "as an image."
             )
 
             st.exception(error)
@@ -1634,7 +1679,7 @@ with left_column:
         "🔍 Recognize Name",
         disabled=preview_image is None,
         use_container_width=True,
-        key="recognize_name_button",
+        key="recognize_name_button_v2",
     )
 
 
@@ -1650,11 +1695,15 @@ with left_column:
                 "the image..."
             ):
 
-                result = recognize_handwritten_image(
-                    preview_image
+                prediction_result = (
+                    recognize_handwritten_image(
+                        preview_image
+                    )
                 )
 
-                st.session_state.prediction = result
+                st.session_state.prediction = (
+                    prediction_result
+                )
 
             st.success(
                 "Recognition completed successfully."
