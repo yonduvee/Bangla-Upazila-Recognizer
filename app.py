@@ -697,108 +697,6 @@ render_html(
     }
 
 
-    /* =====================================================
-       FILE UPLOADER — UPLOAD BUTTON EXACTLY CENTERED
-       ===================================================== */
-
-    [data-testid="stFileUploader"] > label {
-        display: none;
-    }
-
-
-    section[data-testid="stFileUploaderDropzone"] {
-        position: relative !important;
-
-        min-height: 205px;
-
-        display: flex !important;
-
-        align-items: center !important;
-        justify-content: center !important;
-
-        overflow: hidden;
-
-        border:
-            2px dashed
-            #cbbc9d;
-
-        border-radius: 13px;
-
-        background:
-            linear-gradient(
-                145deg,
-                #fffdf7,
-                #f8efdc
-            );
-
-        transition:
-            0.2s ease;
-    }
-
-
-    section[data-testid="stFileUploaderDropzone"]:hover {
-        border-color:
-            var(--green);
-
-        background:
-            #fffdf8;
-    }
-
-
-    /* Streamlit Cloud-safe drop-zone layout */
-    section[data-testid="stFileUploaderDropzone"]
-    [data-testid="stFileUploaderDropzoneInstructions"] {
-        display: none !important;
-    }
-
-
-    section[data-testid="stFileUploaderDropzone"] > div {
-        position: relative !important;
-
-        width: 100% !important;
-
-        min-height: 205px !important;
-
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-
-        padding: 1rem !important;
-    }
-
-
-    section[data-testid="stFileUploaderDropzone"] button {
-        position: static !important;
-
-        transform: none !important;
-
-        margin: 0 auto !important;
-
-        white-space: nowrap !important;
-
-        color: var(--dark-green) !important;
-
-        background: #fffdf7 !important;
-
-        border: 1px solid var(--dark-green) !important;
-
-        border-radius: 8px !important;
-
-        font-weight: 700 !important;
-    }
-
-
-    [data-testid="stFileUploaderFile"] {
-        border:
-            1px solid
-            #d0ddc9;
-
-        border-radius: 8px;
-
-        background: #edf4e8;
-    }
-
-
     [data-testid="stImage"] {
         margin-top: 8px;
 
@@ -1652,21 +1550,19 @@ with left_column:
     )
 
 
+    # =========================================================
+    # IMAGE UPLOADER
+    # =========================================================
+
     uploaded_image = st.file_uploader(
-        "Upload handwritten image",
-        type=[
-            "png",
-            "jpg",
-            "jpeg",
-            "jfif",
-            "webp",
-            "bmp",
-            "tif",
-            "tiff",
-        ],
+        "Choose a handwritten image",
+        type=None,
         accept_multiple_files=False,
-        key="handwritten_image_uploader",
-        label_visibility="collapsed",
+        key="handwritten_image_upload",
+        help=(
+            "Upload PNG, JPG, JPEG, JFIF, WEBP, "
+            "BMP or TIFF image."
+        ),
     )
 
 
@@ -1677,9 +1573,27 @@ with left_column:
 
         try:
 
+            uploaded_bytes = uploaded_image.getvalue()
+
+            if not uploaded_bytes:
+                raise ValueError(
+                    "The selected file is empty."
+                )
+
+            st.info(
+                f"Selected file: {uploaded_image.name} | "
+                f"Size: {len(uploaded_bytes) / 1024:.1f} KB"
+            )
+
+            preview_image = Image.open(
+                io.BytesIO(uploaded_bytes)
+            ).convert("RGB")
+
+            preview_image.load()
+
             upload_signature = (
                 uploaded_image.name,
-                uploaded_image.size,
+                len(uploaded_bytes),
             )
 
             if (
@@ -1693,24 +1607,13 @@ with left_column:
                     upload_signature
                 )
 
-            uploaded_image.seek(0)
-
-            with Image.open(
-                uploaded_image
-            ) as loaded_image:
-                preview_image = (
-                    loaded_image
-                    .convert("RGB")
-                    .copy()
-                )
-
             st.success(
-                f"Image uploaded: {uploaded_image.name}"
+                "Image uploaded successfully."
             )
 
             st.image(
                 preview_image,
-                caption="Uploaded handwritten image",
+                caption=uploaded_image.name,
                 use_container_width=True,
             )
 
@@ -1720,9 +1623,11 @@ with left_column:
             st.session_state.prediction = None
 
             st.error(
-                "The uploaded file could not be opened "
-                f"as an image. {type(error).__name__}: {error}"
+                "The selected file could not be "
+                "opened as an image."
             )
+
+            st.exception(error)
 
 
     recognize_button = st.button(
@@ -1741,22 +1646,26 @@ with left_column:
         try:
 
             with st.spinner(
-                "Loading models and recognizing the image..."
+                "Loading models and recognizing "
+                "the image..."
             ):
 
-                st.session_state.prediction = (
-                    recognize_handwritten_image(
-                        preview_image
-                    )
+                result = recognize_handwritten_image(
+                    preview_image
                 )
+
+                st.session_state.prediction = result
+
+            st.success(
+                "Recognition completed successfully."
+            )
 
         except Exception as error:
 
             st.session_state.prediction = None
 
             st.error(
-                "Recognition failed. Open Manage app → Logs "
-                "for the complete error."
+                "Recognition failed."
             )
 
             st.exception(error)
