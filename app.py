@@ -1,4 +1,5 @@
 import base64
+import hashlib
 import importlib.util
 import io
 import mimetypes
@@ -9,6 +10,7 @@ from textwrap import dedent
 
 import streamlit as st
 from PIL import Image
+from streamlit_cropper import st_cropper
 
 
 # =========================================================
@@ -210,6 +212,9 @@ memorial_uri = image_to_data_uri(
 
 if "prediction" not in st.session_state:
     st.session_state.prediction = None
+
+if "last_crop_signature" not in st.session_state:
+    st.session_state.last_crop_signature = None
 
 
 # =========================================================
@@ -1578,7 +1583,7 @@ with left_column:
 
 
     # =========================================================
-    # SIMPLE STREAMLIT-CLOUD-SAFE IMAGE UPLOADER
+    # IMAGE UPLOADER + USER-GUIDED HANDWRITING CROP
     # =========================================================
 
     uploaded_image = st.file_uploader(
@@ -1603,6 +1608,7 @@ with left_column:
 
 
     preview_image = None
+    cropped_image = None
 
 
     if uploaded_image is not None:
@@ -1642,6 +1648,7 @@ with left_column:
                 != previous_upload_signature
             ):
                 st.session_state.prediction = None
+                st.session_state.last_crop_signature = None
 
                 st.session_state[
                     "last_upload_signature"
@@ -1656,15 +1663,74 @@ with left_column:
                 f"{len(uploaded_bytes) / 1024:.1f} KB"
             )
 
-            st.image(
-                preview_image,
-                caption="Uploaded handwritten image",
-                use_container_width=True,
+            st.markdown(
+                "**Crop the handwritten area**"
             )
+
+            st.caption(
+                "Drag the red crop box so the complete "
+                "Upazila–District pair remains visible. "
+                "Keep a small margin around the writing."
+            )
+
+            upload_digest = hashlib.sha256(
+                uploaded_bytes
+            ).hexdigest()[:16]
+
+            cropped_image = st_cropper(
+                preview_image,
+                realtime_update=True,
+                box_color="#a51920",
+                aspect_ratio=None,
+                return_type="image",
+                key=f"handwriting_cropper_{upload_digest}",
+            )
+
+            if cropped_image is not None:
+                cropped_image = cropped_image.convert(
+                    "RGB"
+                )
+                cropped_image.load()
+
+                if (
+                    cropped_image.width < 10
+                    or cropped_image.height < 10
+                ):
+                    raise ValueError(
+                        "The selected crop area is too small."
+                    )
+
+                crop_signature = hashlib.sha256(
+                    cropped_image.tobytes()
+                ).hexdigest()
+
+                if (
+                    crop_signature
+                    != st.session_state.last_crop_signature
+                ):
+                    st.session_state.prediction = None
+                    st.session_state.last_crop_signature = (
+                        crop_signature
+                    )
+
+                st.image(
+                    cropped_image,
+                    caption=(
+                        "Cropped image that will be sent "
+                        "to the recognition model"
+                    ),
+                    use_container_width=True,
+                )
+
+                st.caption(
+                    f"Cropped size: {cropped_image.width} "
+                    f"× {cropped_image.height} pixels"
+                )
 
         except Exception as error:
 
             preview_image = None
+            cropped_image = None
             st.session_state.prediction = None
 
             st.error(
@@ -1677,7 +1743,7 @@ with left_column:
 
     recognize_button = st.button(
         "🔍 Recognize Name",
-        disabled=preview_image is None,
+        disabled=cropped_image is None,
         use_container_width=True,
         key="recognize_name_button_v2",
     )
@@ -1685,7 +1751,7 @@ with left_column:
 
     if (
         recognize_button
-        and preview_image is not None
+        and cropped_image is not None
     ):
 
         try:
@@ -1697,7 +1763,7 @@ with left_column:
 
                 prediction_result = (
                     recognize_handwritten_image(
-                        preview_image
+                        cropped_image
                     )
                 )
 
