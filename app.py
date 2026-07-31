@@ -1,5 +1,5 @@
 import base64
-import hashlib
+import html as html_lib
 import importlib.util
 import io
 import mimetypes
@@ -10,7 +10,6 @@ from textwrap import dedent
 
 import streamlit as st
 from PIL import Image
-from streamlit_cropper import st_cropper
 
 
 # =========================================================
@@ -42,6 +41,21 @@ ASSETS_DIR = APP_DIR / "assets"
 VILLAGE_IMAGE = ASSETS_DIR / "village.png"
 LALBAGH_IMAGE = ASSETS_DIR / "lalbagh_fort.png"
 MEMORIAL_IMAGE = ASSETS_DIR / "memorial.png"
+
+
+# =========================================================
+# DASHBOARD CONTENT
+# Replace the empty link values and placeholder text below.
+# =========================================================
+
+THESIS_REPORT_URL = "https://drive.google.com/file/d/1bNPdiLuk-hUmnBIVt9SOqHS3eGKRxIeK/view?usp=drive_link"
+GITHUB_REPOSITORY_URL = "https://github.com/yonduvee/Bangla-Upazila-Recognizer"
+LINKEDIN_PROFILE_URL = "https://www.linkedin.com/in/abidul-hoque-0362292a5/"
+
+DASHBOARD_ANALYSIS = "AI recognizes handwritten Bangla Upazila names using advanced deep learning models efficiently."
+DASHBOARD_REAL_LIFE_APPLICATIONS = "Automates postal, banking, government, and educational handwritten document processing efficiently."
+DASHBOARD_BENEFITS = "Reduces errors, saves time, improves accuracy, lowers costs, enhances digitization significantly."
+DASHBOARD_FUTURE_WORK = "Expand datasets, automate segmentation, optimize deployment, support multilingual handwritten recognition."
 
 
 # =========================================================
@@ -151,6 +165,167 @@ def clear_prediction() -> None:
 
     st.session_state.prediction = None
 
+
+def render_slide_dashboard() -> None:
+    """Render a version-independent mint-green slide-out dashboard."""
+
+    def dashboard_link(
+        label: str,
+        icon: str,
+        url: str,
+    ) -> str:
+        clean_url = url.strip()
+        safe_label = html_lib.escape(label)
+        safe_icon = html_lib.escape(icon)
+
+        if clean_url.startswith(("https://", "http://")):
+            safe_url = html_lib.escape(
+                clean_url,
+                quote=True,
+            )
+
+            return (
+                f'<a class="drawer-link" href="{safe_url}" '
+                'target="_blank" rel="noopener noreferrer">'
+                f'<span>{safe_icon}</span><span>{safe_label}</span>'
+                '<span class="drawer-link-arrow">↗</span></a>'
+            )
+
+        return (
+            '<div class="drawer-link drawer-link-disabled">'
+            f'<span>{safe_icon}</span><span>{safe_label}</span>'
+            '<span class="drawer-link-arrow">—</span></div>'
+        )
+
+    def dashboard_section(
+        title: str,
+        icon: str,
+        content: str,
+    ) -> str:
+        clean_content = content.strip()
+
+        if clean_content:
+            body = html_lib.escape(clean_content).replace(
+                "\n",
+                "<br>",
+            )
+        else:
+            body = "Content will be added here."
+
+        return (
+            '<details class="drawer-section">'
+            '<summary>'
+            f'<span>{html_lib.escape(icon)}</span>'
+            f'<span>{html_lib.escape(title)}</span>'
+            '</summary>'
+            f'<div class="drawer-section-body">{body}</div>'
+            '</details>'
+        )
+
+    links_html = "".join(
+        (
+            dashboard_link(
+                "Thesis Report",
+                "📄",
+                THESIS_REPORT_URL,
+            ),
+            dashboard_link(
+                "GitHub Repository",
+                "💻",
+                GITHUB_REPOSITORY_URL,
+            ),
+            dashboard_link(
+                "LinkedIn Profile",
+                "🔗",
+                LINKEDIN_PROFILE_URL,
+            ),
+        )
+    )
+
+    sections_html = "".join(
+        (
+            dashboard_section(
+                "Analysis",
+                "📊",
+                DASHBOARD_ANALYSIS,
+            ),
+            dashboard_section(
+                "Real-Life Applications",
+                "🌍",
+                DASHBOARD_REAL_LIFE_APPLICATIONS,
+            ),
+            dashboard_section(
+                "Benefits",
+                "✓",
+                DASHBOARD_BENEFITS,
+            ),
+            dashboard_section(
+                "Future Work",
+                "🚀",
+                DASHBOARD_FUTURE_WORK,
+            ),
+        )
+    )
+
+    render_html(
+        f"""
+        <div class="research-drawer-root">
+            <input
+                class="research-drawer-toggle"
+                id="research-dashboard-toggle"
+                type="checkbox"
+            >
+
+            <label
+                class="research-dashboard-tab"
+                for="research-dashboard-toggle"
+                title="Open research dashboard"
+            >
+                <span class="research-dashboard-menu-icon">☰</span>
+                <span>Dashboard</span>
+            </label>
+
+            <label
+                class="research-dashboard-backdrop"
+                for="research-dashboard-toggle"
+                aria-label="Close research dashboard"
+            ></label>
+
+            <aside class="research-dashboard-drawer">
+                <div class="research-dashboard-header">
+                    <div>
+                        <div class="research-dashboard-title">
+                            Research Dashboard
+                        </div>
+                        <div class="research-dashboard-subtitle">
+                            Project resources and research highlights
+                        </div>
+                    </div>
+
+                    <label
+                        class="research-dashboard-close"
+                        for="research-dashboard-toggle"
+                        title="Close dashboard"
+                    >×</label>
+                </div>
+
+                <div class="research-dashboard-scroll">
+                    <div class="drawer-heading">Important Links</div>
+                    <div class="drawer-links">{links_html}</div>
+
+                    <div class="drawer-divider"></div>
+                    <div class="drawer-heading">Research Overview</div>
+                    <div class="drawer-sections">{sections_html}</div>
+
+                    <div class="drawer-footer">
+                        Bangla Handwritten Upazila–District Recognition
+                    </div>
+                </div>
+            </aside>
+        </div>
+        """
+    )
+
 # =========================================================
 # CHECK AND LOAD ARTWORKS
 # =========================================================
@@ -212,9 +387,6 @@ memorial_uri = image_to_data_uri(
 
 if "prediction" not in st.session_state:
     st.session_state.prediction = None
-
-if "last_crop_signature" not in st.session_state:
-    st.session_state.last_crop_signature = None
 
 
 # =========================================================
@@ -279,10 +451,454 @@ render_html(
     }
 
 
-    [data-testid="stToolbar"],
+    /* =====================================================
+       SLIDE-OUT RESEARCH DASHBOARD
+       ===================================================== */
+
+    [data-testid="stSidebar"] {
+        background:
+            linear-gradient(
+                165deg,
+                #effff8 0%,
+                #d9f8e9 48%,
+                #c8f1dc 100%
+            );
+
+        border-right:
+            1px solid
+            rgba(6, 65, 38, 0.18);
+
+        box-shadow:
+            12px 0 35px
+            rgba(6, 65, 38, 0.14);
+    }
+
+
+    [data-testid="stSidebar"] > div:first-child {
+        padding-top: 1.2rem;
+    }
+
+
+    [data-testid="stSidebar"] h1,
+    [data-testid="stSidebar"] h2,
+    [data-testid="stSidebar"] h3,
+    [data-testid="stSidebar"] p,
+    [data-testid="stSidebar"] span {
+        color: #073d27;
+    }
+
+
+    [data-testid="stSidebar"] [data-testid="stLinkButton"] a,
+    [data-testid="stSidebar"] .stButton > button {
+        min-height: 46px;
+
+        border:
+            1px solid
+            rgba(6, 65, 38, 0.24);
+
+        border-radius: 12px;
+
+        background:
+            rgba(255, 255, 255, 0.72);
+
+        color: #064126;
+
+        font-weight: 700;
+
+        box-shadow:
+            0 5px 14px
+            rgba(6, 65, 38, 0.08);
+    }
+
+
+    [data-testid="stSidebar"] [data-testid="stLinkButton"] a:hover,
+    [data-testid="stSidebar"] .stButton > button:not(:disabled):hover {
+        border-color: #16865a;
+        background: #f8fffb;
+        color: #064126;
+        transform: translateY(-1px);
+    }
+
+
+    [data-testid="stSidebar"] [data-testid="stExpander"] {
+        overflow: hidden;
+
+        border:
+            1px solid
+            rgba(6, 65, 38, 0.19);
+
+        border-radius: 12px;
+
+        background:
+            rgba(255, 255, 255, 0.58);
+    }
+
+
+    [data-testid="stSidebar"] [data-testid="stExpander"] summary {
+        font-weight: 700;
+        color: #064126;
+    }
+
+
+    /*
+       Streamlit changed the sidebar-open control name across versions.
+       Support both the older and newer DOM selectors so the Dashboard
+       trigger remains visible after upgrading to Streamlit 1.60.
+    */
+    [data-testid="stSidebarCollapsedControl"],
+    [data-testid="stExpandSidebarButton"] {
+        top: 4.25rem;
+        left: 0.55rem;
+        z-index: 1000000;
+    }
+
+
+    [data-testid="stSidebarCollapsedControl"] button,
+    [data-testid="stExpandSidebarButton"] button {
+        width: 138px;
+        height: 46px;
+
+        justify-content: flex-start;
+
+        padding: 0 14px;
+
+        border:
+            1px solid
+            rgba(6, 65, 38, 0.25);
+
+        border-radius: 0 14px 14px 0;
+
+        background:
+            linear-gradient(
+                135deg,
+                #c9f3df,
+                #aee8ce
+            );
+
+        color: #064126;
+
+        box-shadow:
+            0 7px 20px
+            rgba(6, 65, 38, 0.18);
+    }
+
+
+    [data-testid="stSidebarCollapsedControl"] button::after,
+    [data-testid="stExpandSidebarButton"] button::after {
+        content: "Dashboard";
+
+        margin-left: 7px;
+
+        font-family:
+            "Noto Sans Bengali",
+            Arial,
+            sans-serif;
+
+        font-size: 14px;
+        font-weight: 800;
+    }
+
+
+    [data-testid="stSidebarCollapseButton"] button {
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.72);
+        color: #064126;
+    }
+
+
     #MainMenu,
     footer {
         display: none;
+    }
+
+
+    /*
+       Do not hide stToolbar: in Streamlit 1.60 the collapsed-sidebar
+       opener is rendered in the header/toolbar area. Hide only the
+       unrelated toolbar actions and keep the Dashboard control visible.
+    */
+    [data-testid="stToolbar"] {
+        visibility: visible;
+    }
+
+
+    [data-testid="stToolbar"] [data-testid="stAppDeployButton"],
+    [data-testid="stToolbar"] [data-testid="stMainMenu"] {
+        display: none;
+    }
+
+
+    /* =====================================================
+       VERSION-INDEPENDENT SLIDE-OUT DASHBOARD
+       ===================================================== */
+
+    .research-drawer-toggle {
+        position: fixed;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+
+    .research-dashboard-tab {
+        position: fixed;
+        top: 76px;
+        left: 0;
+        z-index: 1000002;
+
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        min-height: 46px;
+        padding: 0 15px 0 12px;
+
+        border: 1px solid rgba(6, 65, 38, 0.25);
+        border-left: 0;
+        border-radius: 0 14px 14px 0;
+
+        background: linear-gradient(135deg, #c9f3df, #aee8ce);
+        color: #064126;
+
+        font-size: 14px;
+        font-weight: 800;
+        cursor: pointer;
+
+        box-shadow: 0 7px 20px rgba(6, 65, 38, 0.18);
+        transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+
+    .research-dashboard-tab:hover {
+        background: linear-gradient(135deg, #dcfaec, #bcefd8);
+        transform: translateX(2px);
+    }
+
+
+    .research-dashboard-menu-icon {
+        font-size: 19px;
+        line-height: 1;
+    }
+
+
+    .research-dashboard-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 1000003;
+
+        visibility: hidden;
+        opacity: 0;
+        cursor: pointer;
+        background: rgba(4, 28, 18, 0.28);
+
+        transition: opacity 0.28s ease, visibility 0.28s ease;
+    }
+
+
+    .research-dashboard-drawer {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 1000004;
+
+        width: min(360px, 90vw);
+        overflow: hidden;
+
+        border-right: 1px solid rgba(6, 65, 38, 0.18);
+        background: linear-gradient(
+            165deg,
+            #effff8 0%,
+            #d9f8e9 48%,
+            #c8f1dc 100%
+        );
+
+        box-shadow: 12px 0 35px rgba(6, 65, 38, 0.22);
+        transform: translateX(-105%);
+        transition: transform 0.3s ease;
+    }
+
+
+    .research-drawer-toggle:checked
+    ~ .research-dashboard-backdrop {
+        visibility: visible;
+        opacity: 1;
+    }
+
+
+    .research-drawer-toggle:checked
+    ~ .research-dashboard-drawer {
+        transform: translateX(0);
+    }
+
+
+    .research-drawer-toggle:checked
+    ~ .research-dashboard-tab {
+        visibility: hidden;
+        opacity: 0;
+    }
+
+
+    .research-dashboard-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+
+        padding: 22px 18px 17px;
+        border-bottom: 1px solid rgba(6, 65, 38, 0.15);
+        background: rgba(255, 255, 255, 0.35);
+    }
+
+
+    .research-dashboard-title {
+        color: #064126;
+        font-family: "Libre Baskerville", serif;
+        font-size: 20px;
+        font-weight: 700;
+    }
+
+
+    .research-dashboard-subtitle {
+        margin-top: 5px;
+        color: #416c58;
+        font-size: 12px;
+        line-height: 1.45;
+    }
+
+
+    .research-dashboard-close {
+        display: grid;
+        place-items: center;
+
+        min-width: 34px;
+        height: 34px;
+        border: 1px solid rgba(6, 65, 38, 0.2);
+        border-radius: 10px;
+
+        background: rgba(255, 255, 255, 0.72);
+        color: #064126;
+
+        font-size: 25px;
+        line-height: 1;
+        cursor: pointer;
+    }
+
+
+    .research-dashboard-scroll {
+        height: calc(100vh - 100px);
+        overflow-y: auto;
+        padding: 18px;
+    }
+
+
+    .drawer-heading {
+        margin: 2px 0 10px;
+        color: #064126;
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+
+
+    .drawer-links,
+    .drawer-sections {
+        display: grid;
+        gap: 9px;
+    }
+
+
+    .drawer-link {
+        display: grid;
+        grid-template-columns: 26px 1fr auto;
+        align-items: center;
+        gap: 8px;
+
+        min-height: 48px;
+        padding: 0 13px;
+
+        border: 1px solid rgba(6, 65, 38, 0.2);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.72);
+        color: #064126 !important;
+
+        font-weight: 700;
+        text-decoration: none !important;
+        box-shadow: 0 5px 14px rgba(6, 65, 38, 0.07);
+    }
+
+
+    a.drawer-link:hover {
+        border-color: #16865a;
+        background: #f8fffb;
+        transform: translateY(-1px);
+    }
+
+
+    .drawer-link-disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+
+    .drawer-link-arrow {
+        font-size: 15px;
+    }
+
+
+    .drawer-divider {
+        height: 1px;
+        margin: 19px 0;
+        background: rgba(6, 65, 38, 0.16);
+    }
+
+
+    .drawer-section {
+        overflow: hidden;
+        border: 1px solid rgba(6, 65, 38, 0.19);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.58);
+    }
+
+
+    .drawer-section summary {
+        display: grid;
+        grid-template-columns: 26px 1fr;
+        align-items: center;
+        gap: 8px;
+        padding: 14px 13px;
+
+        color: #064126;
+        font-weight: 700;
+        cursor: pointer;
+        list-style: none;
+    }
+
+
+    .drawer-section summary::-webkit-details-marker {
+        display: none;
+    }
+
+
+    .drawer-section-body {
+        padding: 0 13px 14px 47px;
+        color: #315a47;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+
+    .drawer-footer {
+        margin-top: 20px;
+        padding: 14px 8px 20px;
+        border-top: 1px solid rgba(6, 65, 38, 0.14);
+
+        color: #537461;
+        font-size: 11px;
+        line-height: 1.5;
+        text-align: center;
     }
 
 
@@ -1473,6 +2089,13 @@ render_html(
 
 
 # =========================================================
+# SLIDE-OUT DASHBOARD
+# =========================================================
+
+render_slide_dashboard()
+
+
+# =========================================================
 # HERO SECTION
 # =========================================================
 
@@ -1583,7 +2206,7 @@ with left_column:
 
 
     # =========================================================
-    # IMAGE UPLOADER + USER-GUIDED HANDWRITING CROP
+    # SIMPLE STREAMLIT-CLOUD-SAFE IMAGE UPLOADER
     # =========================================================
 
     uploaded_image = st.file_uploader(
@@ -1608,7 +2231,6 @@ with left_column:
 
 
     preview_image = None
-    cropped_image = None
 
 
     if uploaded_image is not None:
@@ -1648,7 +2270,6 @@ with left_column:
                 != previous_upload_signature
             ):
                 st.session_state.prediction = None
-                st.session_state.last_crop_signature = None
 
                 st.session_state[
                     "last_upload_signature"
@@ -1663,74 +2284,15 @@ with left_column:
                 f"{len(uploaded_bytes) / 1024:.1f} KB"
             )
 
-            st.markdown(
-                "**Crop the handwritten area**"
-            )
-
-            st.caption(
-                "Drag the red crop box so the complete "
-                "Upazila–District pair remains visible. "
-                "Keep a small margin around the writing."
-            )
-
-            upload_digest = hashlib.sha256(
-                uploaded_bytes
-            ).hexdigest()[:16]
-
-            cropped_image = st_cropper(
+            st.image(
                 preview_image,
-                realtime_update=True,
-                box_color="#a51920",
-                aspect_ratio=None,
-                return_type="image",
-                key=f"handwriting_cropper_{upload_digest}",
+                caption="Uploaded handwritten image",
+                use_container_width=True,
             )
-
-            if cropped_image is not None:
-                cropped_image = cropped_image.convert(
-                    "RGB"
-                )
-                cropped_image.load()
-
-                if (
-                    cropped_image.width < 10
-                    or cropped_image.height < 10
-                ):
-                    raise ValueError(
-                        "The selected crop area is too small."
-                    )
-
-                crop_signature = hashlib.sha256(
-                    cropped_image.tobytes()
-                ).hexdigest()
-
-                if (
-                    crop_signature
-                    != st.session_state.last_crop_signature
-                ):
-                    st.session_state.prediction = None
-                    st.session_state.last_crop_signature = (
-                        crop_signature
-                    )
-
-                st.image(
-                    cropped_image,
-                    caption=(
-                        "Cropped image that will be sent "
-                        "to the recognition model"
-                    ),
-                    use_container_width=True,
-                )
-
-                st.caption(
-                    f"Cropped size: {cropped_image.width} "
-                    f"× {cropped_image.height} pixels"
-                )
 
         except Exception as error:
 
             preview_image = None
-            cropped_image = None
             st.session_state.prediction = None
 
             st.error(
@@ -1743,7 +2305,7 @@ with left_column:
 
     recognize_button = st.button(
         "🔍 Recognize Name",
-        disabled=cropped_image is None,
+        disabled=preview_image is None,
         use_container_width=True,
         key="recognize_name_button_v2",
     )
@@ -1751,7 +2313,7 @@ with left_column:
 
     if (
         recognize_button
-        and cropped_image is not None
+        and preview_image is not None
     ):
 
         try:
@@ -1763,7 +2325,7 @@ with left_column:
 
                 prediction_result = (
                     recognize_handwritten_image(
-                        cropped_image
+                        preview_image
                     )
                 )
 
