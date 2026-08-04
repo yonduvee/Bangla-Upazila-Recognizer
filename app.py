@@ -1,5 +1,6 @@
 import base64
 import hashlib
+import html as html_lib
 import importlib.util
 import io
 import mimetypes
@@ -172,6 +173,136 @@ def clear_prediction() -> None:
     st.session_state.prediction = None
     st.session_state.last_crop_signature = None
 
+
+
+
+def render_slide_dashboard() -> None:
+    """Render a visible mint-green slide-out dashboard."""
+
+    def make_link(label: str, icon: str, url: str) -> str:
+        safe_label = html_lib.escape(label)
+        safe_icon = html_lib.escape(icon)
+        clean_url = url.strip()
+
+        if clean_url.startswith(("https://", "http://")):
+            safe_url = html_lib.escape(clean_url, quote=True)
+            return (
+                f'<a class="drawer-link" href="{safe_url}" '
+                'target="_blank" rel="noopener noreferrer">'
+                f'<span class="drawer-link-icon">{safe_icon}</span>'
+                f'<span class="drawer-link-label">{safe_label}</span>'
+                '<span class="drawer-link-arrow">↗</span>'
+                '</a>'
+            )
+
+        return (
+            '<div class="drawer-link drawer-link-disabled">'
+            f'<span class="drawer-link-icon">{safe_icon}</span>'
+            f'<span class="drawer-link-label">{safe_label}</span>'
+            '<span class="drawer-link-arrow">—</span>'
+            '</div>'
+        )
+
+    def make_section(title: str, icon: str, content: str) -> str:
+        safe_title = html_lib.escape(title)
+        safe_icon = html_lib.escape(icon)
+        safe_content = html_lib.escape(
+            content.strip() or "Content will be added here."
+        ).replace("\n", "<br>")
+
+        return (
+            '<details class="drawer-section">'
+            '<summary>'
+            f'<span class="drawer-section-icon">{safe_icon}</span>'
+            f'<span>{safe_title}</span>'
+            '<span class="drawer-chevron">⌄</span>'
+            '</summary>'
+            f'<div class="drawer-section-body">{safe_content}</div>'
+            '</details>'
+        )
+
+    links_html = "".join(
+        (
+            make_link("Thesis Report", "📄", THESIS_REPORT_URL),
+            make_link("GitHub Repository", "💻", GITHUB_REPOSITORY_URL),
+            make_link("LinkedIn Profile", "🔗", LINKEDIN_PROFILE_URL),
+        )
+    )
+
+    sections_html = "".join(
+        (
+            make_section("Analysis", "📊", DASHBOARD_ANALYSIS),
+            make_section(
+                "Real-Life Applications",
+                "🌍",
+                DASHBOARD_REAL_LIFE_APPLICATIONS,
+            ),
+            make_section("Benefits", "✓", DASHBOARD_BENEFITS),
+            make_section("Future Work", "🚀", DASHBOARD_FUTURE_WORK),
+        )
+    )
+
+    render_html(
+        f"""
+        <div class="research-drawer-root">
+            <input
+                class="research-drawer-toggle"
+                id="research-dashboard-toggle"
+                type="checkbox"
+            >
+
+            <label
+                class="research-dashboard-tab"
+                for="research-dashboard-toggle"
+                title="Open research dashboard"
+            >
+                <span class="research-dashboard-menu-icon">☰</span>
+                <span>Dashboard</span>
+            </label>
+
+            <label
+                class="research-dashboard-backdrop"
+                for="research-dashboard-toggle"
+                aria-label="Close research dashboard"
+            ></label>
+
+            <aside class="research-dashboard-drawer">
+                <div class="research-dashboard-header">
+                    <div class="research-dashboard-brand-icon">✍️</div>
+
+                    <div class="research-dashboard-heading-wrap">
+                        <div class="research-dashboard-title">
+                            Research Dashboard
+                        </div>
+                        <div class="research-dashboard-subtitle">
+                            Thesis resources and project overview
+                        </div>
+                    </div>
+
+                    <label
+                        class="research-dashboard-close"
+                        for="research-dashboard-toggle"
+                        title="Close dashboard"
+                    >×</label>
+                </div>
+
+                <div class="research-dashboard-scroll">
+                    <div class="drawer-heading">Important Links</div>
+                    <div class="drawer-links">{links_html}</div>
+
+                    <div class="drawer-divider"></div>
+
+                    <div class="drawer-heading">Research Overview</div>
+                    <div class="drawer-sections">{sections_html}</div>
+
+                    <div class="drawer-footer">
+                        Bangla Handwritten Upazila–District Recognition
+                    </div>
+                </div>
+            </aside>
+        </div>
+        """
+    )
 
 # =========================================================
 # REQUIRED FILE CHECK
@@ -1041,6 +1172,322 @@ render_html(
             height: 61px;
         }
     }
+
+
+    /* ---------- Version-independent custom slide-out dashboard ---------- */
+
+    .research-drawer-toggle {
+        position: fixed;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .research-dashboard-tab {
+        position: fixed;
+        top: 76px;
+        left: 0;
+        z-index: 1000002;
+
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        min-height: 47px;
+        padding: 0 16px 0 13px;
+
+        border: 1px solid rgba(6, 65, 38, 0.28);
+        border-left: 0;
+        border-radius: 0 14px 14px 0;
+
+        background: linear-gradient(135deg, #d8f9e9, #aee8ce);
+        color: #064126;
+
+        font-size: 14px;
+        font-weight: 800;
+        cursor: pointer;
+
+        box-shadow: 0 7px 20px rgba(6, 65, 38, 0.20);
+        transition: transform 0.22s ease, background 0.22s ease;
+    }
+
+    .research-dashboard-tab:hover {
+        background: linear-gradient(135deg, #e8fff4, #c0f0da);
+        transform: translateX(3px);
+    }
+
+    .research-dashboard-menu-icon {
+        font-size: 19px;
+        line-height: 1;
+    }
+
+    .research-dashboard-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 1000003;
+
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+
+        background: rgba(8, 31, 21, 0.34);
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
+
+        transition: opacity 0.25s ease, visibility 0.25s ease;
+    }
+
+    .research-dashboard-drawer {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 1000004;
+
+        width: min(390px, 88vw);
+        height: 100vh;
+
+        overflow: hidden;
+        transform: translateX(-104%);
+
+        border-right: 1px solid rgba(6, 65, 38, 0.20);
+        background:
+            radial-gradient(
+                circle at 15% 0%,
+                rgba(255, 255, 255, 0.80),
+                transparent 34%
+            ),
+            linear-gradient(165deg, #effff8 0%, #d8f8e9 48%, #c6f0db 100%);
+
+        box-shadow: 18px 0 45px rgba(6, 65, 38, 0.24);
+        transition: transform 0.28s ease;
+    }
+
+    .research-drawer-toggle:checked ~ .research-dashboard-backdrop {
+        visibility: visible;
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .research-drawer-toggle:checked ~ .research-dashboard-drawer {
+        transform: translateX(0);
+    }
+
+    .research-drawer-toggle:checked ~ .research-dashboard-tab {
+        transform: translateX(-110%);
+        pointer-events: none;
+    }
+
+    .research-dashboard-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        min-height: 92px;
+        padding: 18px 16px;
+
+        border-bottom: 1px solid rgba(6, 65, 38, 0.15);
+        background: rgba(255, 255, 255, 0.45);
+    }
+
+    .research-dashboard-brand-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 46px;
+
+        width: 46px;
+        height: 46px;
+        border-radius: 13px;
+
+        background: rgba(255, 255, 255, 0.88);
+        box-shadow: 0 5px 14px rgba(6, 65, 38, 0.10);
+        font-size: 24px;
+    }
+
+    .research-dashboard-heading-wrap {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .research-dashboard-title {
+        color: #064126;
+        font-family: "Libre Baskerville", serif;
+        font-size: 18px;
+        font-weight: 700;
+    }
+
+    .research-dashboard-subtitle {
+        margin-top: 4px;
+        color: #3d6855;
+        font-size: 12.5px;
+        line-height: 1.4;
+    }
+
+    .research-dashboard-close {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 38px;
+
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+
+        background: rgba(255, 255, 255, 0.72);
+        color: #064126;
+        cursor: pointer;
+
+        font-family: Arial, sans-serif;
+        font-size: 28px;
+        line-height: 1;
+        transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .research-dashboard-close:hover {
+        background: #ffffff;
+        transform: rotate(4deg);
+    }
+
+    .research-dashboard-scroll {
+        height: calc(100vh - 92px);
+        overflow-y: auto;
+        padding: 18px 17px 24px;
+    }
+
+    .drawer-heading {
+        margin: 3px 2px 10px;
+        color: #064126;
+        font-size: 12.5px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .drawer-links,
+    .drawer-sections {
+        display: grid;
+        gap: 10px;
+    }
+
+    .drawer-link {
+        display: grid;
+        grid-template-columns: 28px 1fr 24px;
+        align-items: center;
+        gap: 9px;
+
+        min-height: 52px;
+        padding: 10px 12px;
+
+        border: 1px solid rgba(6, 65, 38, 0.18);
+        border-radius: 12px;
+
+        background: rgba(255, 255, 255, 0.72);
+        color: #064126;
+        text-decoration: none;
+        font-weight: 700;
+
+        box-shadow: 0 5px 14px rgba(6, 65, 38, 0.07);
+        transition: transform 0.18s ease, background 0.18s ease;
+    }
+
+    .drawer-link:hover {
+        background: #ffffff;
+        color: #064126;
+        transform: translateY(-1px);
+    }
+
+    .drawer-link-icon {
+        text-align: center;
+        font-size: 18px;
+    }
+
+    .drawer-link-arrow {
+        text-align: right;
+        font-size: 16px;
+    }
+
+    .drawer-link-disabled {
+        opacity: 0.55;
+    }
+
+    .drawer-divider {
+        height: 1px;
+        margin: 20px 2px;
+        background: rgba(6, 65, 38, 0.16);
+    }
+
+    .drawer-section {
+        overflow: hidden;
+        border: 1px solid rgba(6, 65, 38, 0.18);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.62);
+    }
+
+    .drawer-section summary {
+        display: grid;
+        grid-template-columns: 27px 1fr 22px;
+        align-items: center;
+        gap: 9px;
+
+        min-height: 51px;
+        padding: 10px 12px;
+
+        color: #064126;
+        cursor: pointer;
+        list-style: none;
+        font-weight: 750;
+    }
+
+    .drawer-section summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .drawer-section-icon {
+        text-align: center;
+        font-size: 17px;
+    }
+
+    .drawer-chevron {
+        text-align: right;
+        transition: transform 0.2s ease;
+    }
+
+    .drawer-section[open] .drawer-chevron {
+        transform: rotate(180deg);
+    }
+
+    .drawer-section-body {
+        padding: 0 14px 14px 48px;
+        color: #294d3d;
+        font-size: 13.5px;
+        line-height: 1.62;
+    }
+
+    .drawer-footer {
+        margin-top: 22px;
+        padding: 13px;
+        border-radius: 11px;
+        background: rgba(255, 255, 255, 0.52);
+        color: #35604c;
+        text-align: center;
+        font-size: 12px;
+        line-height: 1.45;
+    }
+
+    @media (max-width: 700px) {
+        .research-dashboard-tab {
+            top: 66px;
+            min-height: 43px;
+            padding-right: 12px;
+        }
+
+        .research-dashboard-drawer {
+            width: min(360px, 92vw);
+        }
+    }
+
     </style>
     """
 )
@@ -1050,77 +1497,7 @@ render_html(
 # SLIDE-OUT DASHBOARD
 # =========================================================
 
-with st.sidebar:
-    st.markdown(
-        """
-        <div class="dashboard-brand">
-            <div class="dashboard-brand-icon">✍️</div>
-            <div>
-                <div class="dashboard-brand-title">
-                    Research Dashboard
-                </div>
-                <div class="dashboard-brand-subtitle">
-                    Thesis resources and project overview
-                </div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        '<div class="dashboard-section-title">Important Links</div>',
-        unsafe_allow_html=True,
-    )
-
-    st.link_button(
-        "📄 Thesis Report",
-        THESIS_REPORT_URL,
-        use_container_width=True,
-    )
-
-    st.link_button(
-        "💻 GitHub Repository",
-        GITHUB_REPOSITORY_URL,
-        use_container_width=True,
-    )
-
-    st.link_button(
-        "🔗 LinkedIn Profile",
-        LINKEDIN_PROFILE_URL,
-        use_container_width=True,
-    )
-
-    st.markdown(
-        '<div class="dashboard-separator"></div>',
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        '<div class="dashboard-section-title">Research Overview</div>',
-        unsafe_allow_html=True,
-    )
-
-    with st.expander("📊 Analysis"):
-        st.write(DASHBOARD_ANALYSIS)
-
-    with st.expander("🌍 Real-Life Applications"):
-        st.write(DASHBOARD_REAL_LIFE_APPLICATIONS)
-
-    with st.expander("✅ Benefits"):
-        st.write(DASHBOARD_BENEFITS)
-
-    with st.expander("🚀 Future Work"):
-        st.write(DASHBOARD_FUTURE_WORK)
-
-    st.markdown(
-        """
-        <div class="dashboard-footer">
-            Bangla Handwritten Upazila–District Recognition
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+render_slide_dashboard()
 
 
 # =========================================================
