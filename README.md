@@ -22,6 +22,3 @@ A live AI-powered web application for recognizing handwritten Bangla Upazila–D
 - OpenCV
 - NumPy
 - Pillow
-- Hugging Face
-- Transformers
-- timm
