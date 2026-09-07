@@ -787,7 +787,55 @@ render_html(
         font-size: 16px;
         line-height: 1.65;
     }
+    /* ---------- Demo Image / Google Drive ---------- */
 
+.demo-image-section {
+    margin: 5px 12px 20px;
+    padding: 15px 16px;
+    text-align: center;
+    border: 1px solid #d8dfcf;
+    border-radius: 11px;
+    background: linear-gradient(135deg, #f4f9ef, #edf5e8);
+}
+
+.demo-text {
+    margin-bottom: 9px;
+    color: #064126;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.demo-drive-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 10px 18px;
+    border: 1px solid #095c35;
+    border-radius: 8px;
+    color: white !important;
+    background: linear-gradient(135deg, #095c35, #16865a);
+    text-decoration: none !important;
+    font-family: "Noto Sans Bengali", Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    box-shadow: 0 4px 10px rgba(6, 65, 38, 0.15);
+    transition: all 0.2s ease;
+}
+
+.demo-drive-button:hover {
+    color: white !important;
+    background: linear-gradient(135deg, #8d151b, #b5242a);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 13px rgba(165, 25, 32, 0.18);
+}
+
+.demo-hint {
+    margin-top: 9px;
+    color: #5b6c61;
+    font-size: 12px;
+    line-height: 1.4;
+}
     .highlight-red {
         color: var(--red);
         font-weight: 700;
@@ -1575,6 +1623,25 @@ with left_column:
             <span class="highlight-red">Upazila–District</span>
             pair image, then crop only the handwriting area.
         </div>
+
+        <div class="demo-image-section">
+    <div class="demo-text">
+        💡 Need an example?
+    </div>
+
+    <a
+        href="https://drive.google.com/drive/folders/1qCQuXqjLLNrnSiM5H6ESkQTnbCv-oyzX?usp=drive_link"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="demo-drive-button"
+    >
+        📁 View Demo & Download Images
+    </a>
+
+    <div class="demo-hint">
+        View sample images to understand the required handwriting format.
+    </div>
+</div>
         """
     )
 
