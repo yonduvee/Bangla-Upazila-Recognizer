@@ -17,9 +17,7 @@ from torchvision import transforms
 from transformers import ViTConfig, ViTForImageClassification
 
 
-# =========================================================
-# HUGGING FACE MODEL REPOSITORY
-# =========================================================
+
 
 MODEL_REPO_ID = (
     "Rahat171/"
@@ -28,15 +26,6 @@ MODEL_REPO_ID = (
 
 MODEL_REVISION = "main"
 
-
-# =========================================================
-# MODEL VERSION
-# =========================================================
-#
-# এখানে কোন model version ব্যবহার করবেন সেটি নির্বাচন হবে।
-# বর্তমানে v2 active রাখা হয়েছে।
-# v1 ব্যবহার করতে শুধু "v2" পরিবর্তন করে "v1" লিখবেন।
-# =========================================================
 
 MODEL_VERSION = "v2"
 
@@ -68,9 +57,6 @@ CONVNEXT_MODEL_FILENAME = (
 )
 
 
-# =========================================================
-# GENERAL INFERENCE SETTINGS
-# =========================================================
 
 NUM_CLASSES = 496
 IMAGE_SIZE = 224
@@ -78,9 +64,6 @@ CONVNEXT_VARIANT = "tiny"
 USE_CROP = False
 
 
-# =========================================================
-# IMAGE NORMALIZATION
-# =========================================================
 
 NORM_MEAN = [
     0.485,
@@ -95,10 +78,6 @@ NORM_STD = [
 ]
 
 
-# =========================================================
-# WINNING SOFT-VOTING WEIGHTS
-# =========================================================
-
 VIT_WEIGHT = 0.15
 CONVNEXT_WEIGHT = 0.85
 
@@ -108,9 +87,7 @@ VOTING_WEIGHTS = [
 ]
 
 
-# =========================================================
-# CLASS NAMES
-# =========================================================
+
 
 CLASS_NAMES = [
     "Abhaynagar Upazila,Jashore",
@@ -612,9 +589,6 @@ CLASS_NAMES = [
 ]
 
 
-# =========================================================
-# CONFIGURATION VALIDATION
-# =========================================================
 
 if len(CLASS_NAMES) != NUM_CLASSES:
     raise ValueError(
@@ -635,9 +609,7 @@ if abs(sum(VOTING_WEIGHTS) - 1.0) > 1e-8:
         "Soft-voting weights must add up to 1.0."
     )
 
-# =========================================================
-# MODEL DOWNLOAD AND FILE DISCOVERY
-# =========================================================
+
 
 def find_repository_file(
     repository_files: list[str],
@@ -754,9 +726,6 @@ def download_model_checkpoints() -> tuple[Path, Path]:
     )
 
 
-# =========================================================
-# VIT MODEL ARCHITECTURE
-# =========================================================
 
 def build_vit_base_custom_head(
     num_classes: int,
@@ -833,9 +802,6 @@ def build_vit_base_custom_head(
     return model
 
 
-# =========================================================
-# CONVNEXT MODEL ARCHITECTURE
-# =========================================================
 
 class ConvNeXtCustom(nn.Module):
     """
@@ -986,10 +952,6 @@ def build_convnext_custom_head(
     )
 
 
-# =========================================================
-# CHECKPOINT READING
-# =========================================================
-
 def read_state_dictionary(
     checkpoint_path: Path,
 ) -> dict[str, torch.Tensor]:
@@ -1061,9 +1023,6 @@ def read_state_dictionary(
     return cleaned_state_dictionary
 
 
-# =========================================================
-# LEGACY VIT CHECKPOINT KEY CONVERSION
-# =========================================================
 
 def convert_legacy_vit_state_dictionary(
     state_dictionary: dict[str, torch.Tensor],
@@ -1172,10 +1131,6 @@ def convert_legacy_vit_state_dictionary(
     return converted_dictionary
 
 
-# =========================================================
-# STRICT CHECKPOINT LOADING
-# =========================================================
-
 def load_checkpoint_strictly(
     model: nn.Module,
     checkpoint_path: Path,
@@ -1221,10 +1176,6 @@ def load_checkpoint_strictly(
 
     return model
 
-
-# =========================================================
-# IMAGE PREPROCESSING
-# =========================================================
 def crop_text_area_pil(
     image: Image.Image,
     padding: int = 6,
@@ -1359,10 +1310,6 @@ INFERENCE_TRANSFORM = transforms.Compose(
 )
 
 
-# =========================================================
-# CLASS LABEL DECODING
-# =========================================================
-
 def clean_display_name(
     name: str,
 ) -> str:
@@ -1440,10 +1387,6 @@ def split_class_label(
         district,
     )
 
-
-# =========================================================
-# ENSEMBLE PREDICTOR
-# =========================================================
 
 class UpazilaDistrictPredictor:
     """
@@ -1699,9 +1642,6 @@ class UpazilaDistrictPredictor:
         }
 
 
-# =========================================================
-# PUBLIC PREDICTION FUNCTION
-# =========================================================
 
 @lru_cache(maxsize=1)
 def get_predictor(
@@ -1731,13 +1671,9 @@ def predict_upazila_district(
     )
 
 
-# Explicit public API used by app.py
 __all__ = ["predict_upazila_district"]
 
 
-# =========================================================
-# STEP 1 STANDALONE STARTUP TEST
-# =========================================================
 
 def run_pipeline_startup_test() -> None:
     """
