@@ -18,9 +18,7 @@ except ImportError:
     st_cropper = None
 
 
-# =========================================================
-# PAGE CONFIGURATION
-# =========================================================
+
 
 st.set_page_config(
     page_title="Bangla Handwritten Upazila–District Recognition",
@@ -30,9 +28,7 @@ st.set_page_config(
 )
 
 
-# =========================================================
-# PROJECT PATHS
-# =========================================================
+
 
 APP_DIR = Path(__file__).resolve().parent
 INFERENCE_FILE = APP_DIR / "inference.py"
@@ -43,10 +39,7 @@ LALBAGH_IMAGE = ASSETS_DIR / "lalbagh_fort.png"
 MEMORIAL_IMAGE = ASSETS_DIR / "memorial.png"
 
 
-# =========================================================
-# DASHBOARD CONTENT
-# Change these values whenever needed.
-# =========================================================
+
 
 THESIS_REPORT_URL = (
     "https://drive.google.com/file/d/"
@@ -82,9 +75,6 @@ DASHBOARD_FUTURE_WORK = (
 )
 
 
-# =========================================================
-# HELPERS
-# =========================================================
 
 def render_html(content: str) -> None:
     """Render HTML without Markdown code-block formatting."""
@@ -304,9 +294,7 @@ def render_slide_dashboard() -> None:
         """
     )
 
-# =========================================================
-# REQUIRED FILE CHECK
-# =========================================================
+
 
 missing_files = [
     path
@@ -347,9 +335,7 @@ lalbagh_uri = image_to_data_uri(LALBAGH_IMAGE)
 memorial_uri = image_to_data_uri(MEMORIAL_IMAGE)
 
 
-# =========================================================
-# SESSION STATE
-# =========================================================
+
 
 if "prediction" not in st.session_state:
     st.session_state.prediction = None
@@ -361,9 +347,7 @@ if "last_crop_signature" not in st.session_state:
     st.session_state.last_crop_signature = None
 
 
-# =========================================================
-# CUSTOM CSS
-# =========================================================
+
 
 render_html(
     """
@@ -435,7 +419,7 @@ render_html(
         padding-bottom: 1rem;
     }
 
-    /* ---------- Native slide-out dashboard ---------- */
+    
 
     [data-testid="stSidebar"] {
         background:
@@ -578,7 +562,7 @@ render_html(
         line-height: 1.45;
     }
 
-    /* ---------- Hero ---------- */
+ 
 
     .top-pattern {
         height: 15px;
@@ -736,7 +720,6 @@ render_html(
         font-size: 25px;
     }
 
-    /* ---------- Main cards ---------- */
 
     div[data-testid="stHorizontalBlock"] {
         gap: 1.35rem;
@@ -787,7 +770,6 @@ render_html(
         font-size: 16px;
         line-height: 1.65;
     }
-    /* ---------- Demo Image / Google Drive ---------- */
 
 .demo-image-section {
     margin: 5px 12px 20px;
@@ -917,7 +899,6 @@ render_html(
         font-size: 21px;
     }
 
-    /* ---------- Result ---------- */
 
     .result-introduction {
         margin: 4px 0 17px;
@@ -1078,7 +1059,6 @@ render_html(
         font-size: 54px;
     }
 
-    /* ---------- About ---------- */
 
     .about-section {
         margin-top: 23px;
@@ -1221,8 +1201,6 @@ render_html(
         }
     }
 
-
-    /* ---------- Version-independent custom slide-out dashboard ---------- */
 
     .research-drawer-toggle {
         position: fixed;
@@ -1541,16 +1519,7 @@ render_html(
 )
 
 
-# =========================================================
-# SLIDE-OUT DASHBOARD
-# =========================================================
-
 render_slide_dashboard()
-
-
-# =========================================================
-# HERO SECTION
-# =========================================================
 
 render_html(
     f"""
@@ -1595,19 +1564,13 @@ render_html(
 )
 
 
-# =========================================================
-# MAIN SECTION
-# =========================================================
-
 left_column, right_column = st.columns(
     [1, 1],
     gap="large",
 )
 
 
-# =========================================================
-# LEFT — UPLOAD AND CROP
-# =========================================================
+
 
 with left_column:
     render_html(
@@ -1912,9 +1875,6 @@ with right_column:
         )
 
 
-# =========================================================
-# ABOUT SECTION
-# =========================================================
 
 current_year = datetime.now().year
 
